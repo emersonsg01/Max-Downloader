@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Max Downloader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Ambiente: a capa do vídeo vira a luz de fundo do app -->
+  <div class="ambient" aria-hidden="true">
+    <img id="ambientImg" alt="">
+    <div class="ambient-blob b1"></div>
+    <div class="ambient-blob b2"></div>
+    <div class="ambient-blob b3"></div>
+  </div>
+
+  <!-- Brilho nas bordas enquanto analisa (estilo Apple Intelligence) -->
+  <div class="edge-glow" id="edgeGlow" aria-hidden="true"><i></i><i></i></div>
+
+  <div class="titlebar pywebview-drag-region"></div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div class="traffic">
+        <button class="tl close" data-win="close" title="Fechar"><svg viewBox="0 0 12 12"><path d="M3.5 3.5l5 5M8.5 3.5l-5 5"/></svg></button>
+        <button class="tl min" data-win="minimize" title="Minimizar"><svg viewBox="0 0 12 12"><path d="M2.5 6h7"/></svg></button>
+        <button class="tl max" data-win="maximize" title="Maximizar"><svg viewBox="0 0 12 12"><path d="M3.2 8.8V4.6l4.2 4.2zM8.8 3.2v4.2L4.6 3.2z"/></svg></button>
+      </div>
+
+      <div class="brand">
+        <div class="app-icon sm"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M6 19.5h12"/></svg></div>
+        <div>
+          <div class="brand-name">Max</div>
+          <div class="brand-sub">Downloader</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-view="home">
+          <span class="nav-ico" data-icon="sparkle"></span><span>Baixar</span>
+        </button>
+        <button class="nav-item" data-view="downloads">
+          <span class="nav-ico" data-icon="tray"></span><span>Downloads</span>
+          <span class="badge" id="navBadge" hidden>0</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="nav-ico" data-icon="gear"></span><span>Ajustes</span>
+        </button>
+      </nav>
+
+      <div class="side-label">Pastas</div>
+      <nav class="nav">
+        <button class="nav-item" data-open="video"><span class="nav-ico" data-icon="film"></span><span>Vídeos</span></button>
+        <button class="nav-item" data-open="audio"><span class="nav-ico" data-icon="music"></span><span>Áudios</span></button>
+      </nav>
+
+      <div class="side-foot">
+        <div class="storage-card" id="storageCard" title="Pasta de destino">
+          <span data-icon="folder"></span>
+          <div class="storage-text">
+            <div class="storage-title">Salvando em</div>
+            <div class="storage-path" id="storagePath">—</div>
+          </div>
+        </div>
+        <div class="credits">
+          <span class="credits-text">Criado por<b>Emerson Gonçalves</b></span>
+          <div class="credits-links">
+            <button class="social" data-url="https://github.com/emersonsg01" title="GitHub — emersonsg01"><span data-icon="github"></span></button>
+            <button class="social" data-url="https://www.linkedin.com/in/emerson-gon%C3%A7alves-a9ba6582/" title="LinkedIn — Emerson Gonçalves"><span data-icon="linkedin"></span></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- ============================== BAIXAR ============================== -->
+      <section class="view active" id="view-home">
+        <div class="home-scroll" id="homeScroll">
+          <div class="hero" id="hero">
+            <div class="app-icon xl">
+              <svg viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M6 19.5h12"/></svg>
+            </div>
+            <h1 class="hero-title">O que vamos baixar hoje?</h1>
+            <p class="hero-sub">Cole o link de um vídeo, música ou playlist. Escolha a qualidade e pronto.</p>
+          </div>
+
+          <form class="omnibox" id="omnibox" autocomplete="off">
+            <div class="omni-ring"></div>
+            <span class="omni-ico" data-icon="link"></span>
+            <input id="urlInput" type="text" spellcheck="false" placeholder="Cole um link do YouTube, Instagram, TikTok, X, Vimeo…">
+            <button type="button" class="omni-clear" id="clearBtn" title="Limpar" hidden><span data-icon="xmark-circle"></span></button>
+            <button type="button" class="pill-btn ghost" id="pasteBtn"><span data-icon="clipboard"></span>Colar</button>
+            <button type="submit" class="pill-btn primary" id="analyzeBtn">
+              <span class="btn-label">Analisar</span><span class="spinner"></span>
+            </button>
+          </form>
+
+          <div class="clip-suggest" id="clipSuggest" hidden>
+            <span data-icon="sparkle"></span>
+            <span>Link copiado detectado:</span>
+            <b id="clipText"></b>
+            <button class="link-btn" id="clipUse">Usar</button>
+          </div>
+
+          <div class="sites" id="sites">
+            <span>YouTube</span><span>Instagram</span><span>TikTok</span><span>X</span><span>Vimeo</span>
+            <span>SoundCloud</span><span>Twitch</span><span>Reddit</span><span class="muted">+1.800 sites</span>
+          </div>
+
+          <div class="error-card" id="errorCard" hidden>
+            <span data-icon="warn"></span>
+            <div class="error-body">
+              <b>Não foi possível analisar</b><p id="errorText"></p>
+              <div class="error-actions" id="errorActions" hidden>
+                <button class="pill-btn primary sm" id="errorFix">Configurar acesso</button>
+                <button class="pill-btn ghost sm" id="errorRetry">Tentar de novo</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Esqueleto -->
+          <div class="skeleton" id="skeleton" hidden>
+            <div class="sk-thumb shimmer"></div>
+            <div class="sk-lines"><i class="shimmer"></i><i class="shimmer"></i><i class="shimmer"></i></div>
+          </div>
+
+          <!-- Resultado -->
+          <div class="result" id="result" hidden>
+            <article class="media-card" id="mediaCard">
+              <div class="media-thumb">
+                <img id="thumb" alt="">
+                <span class="dur" id="duration"></span>
+                <span class="live-badge" id="liveBadge" hidden>AO VIVO</span>
+              </div>
+              <div class="media-info">
+                <div class="media-source" id="sourceLabel"></div>
+                <h2 class="media-title" id="title"></h2>
+                <div class="media-author" id="uploader"></div>
+                <div class="media-chips" id="mediaChips"></div>
+              </div>
+            </article>
+
+            <div class="playlist-strip" id="playlistStrip" hidden></div>
+
+            <div class="mode-switch">
+              <div class="segmented big" id="modeSeg">
+                <span class="seg-glider"></span>
+                <button data-mode="video" class="on"><span data-icon="film"></span>Vídeo</button>
+                <button data-mode="audio"><span data-icon="music"></span>Somente áudio</button>
+              </div>
+            </div>
+
+            <!-- Opções de vídeo -->
+            <div class="options" id="videoOptions">
+              <div class="group">
+                <div class="group-head"><span>Resolução</span><small id="resHint"></small></div>
+                <div class="tiles" id="resTiles"></div>
+              </div>
+              <div class="grid-2">
+                <div class="group">
+                  <div class="group-head"><span>Quadros por segundo</span></div>
+                  <div class="chips" id="fpsChips"></div>
+                </div>
+                <div class="group hdr-group" id="hdrGroup">
+                  <div class="row">
+                    <div class="row-text">
+                      <div class="row-title"><span class="hdr-word">HDR</span> Alto alcance dinâmico</div>
+                      <div class="row-sub" id="hdrSub">Cores e brilho mais intensos em telas compatíveis</div>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="hdrToggle"><i></i></label>
+                  </div>
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="group">
+                  <div class="group-head"><span>Formato</span></div>
+                  <div class="chips cap" id="containerChips"></div>
+                </div>
+                <div class="group">
+                  <div class="group-head"><span>Codec de vídeo</span></div>
+                  <div class="chips cap" id="codecChips"></div>
+                </div>
+              </div>
+              <div class="group">
+                <div class="group-head"><span>Áudio do vídeo</span></div>
+                <div class="chips cap" id="vAudioChips"></div>
+              </div>
+            </div>
+
+            <!-- Opções de áudio -->
+            <div class="options" id="audioOptions" hidden>
+              <div class="group">
+                <div class="group-head"><span>Formato do áudio</span></div>
+                <div class="tiles audio" id="afmtTiles"></div>
+              </div>
+              <div class="group">
+                <div class="group-head"><span>Qualidade</span><small id="aqHint"></small></div>
+                <div class="slider-wrap">
+                  <div class="steps" id="aqSteps"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extras -->
+            <div class="group list">
+              <div class="row">
+                <span class="row-ico c-orange" data-icon="photo"></span>
+                <div class="row-text"><div class="row-title">Incorporar capa</div><div class="row-sub">A miniatura vira a arte do arquivo</div></div>
+                <label class="switch"><input type="checkbox" data-extra="thumbnail"><i></i></label>
+              </div>
+              <div class="row">
+                <span class="row-ico c-blue" data-icon="tag"></span>
+                <div class="row-text"><div class="row-title">Metadados e capítulos</div><div class="row-sub">Título, artista, data e marcadores</div></div>
+                <label class="switch"><input type="checkbox" data-extra="metadata"><i></i></label>
+              </div>
+              <div class="row" id="subsRow">
+                <span class="row-ico c-green" data-icon="captions"></span>
+                <div class="row-text"><div class="row-title">Legendas</div><div class="row-sub" id="subsSub">Incorporadas ao vídeo</div></div>
+                <label class="switch"><input type="checkbox" data-extra="subtitles"><i></i></label>
+              </div>
+              <div class="row" id="sponsorRow">
+                <span class="row-ico c-pink" data-icon="scissors"></span>
+                <div class="row-text"><div class="row-title">Pular patrocínios</div><div class="row-sub">Remove propagandas e vinhetas via SponsorBlock</div></div>
+                <label class="switch"><input type="checkbox" data-extra="sponsorblock"><i></i></label>
+              </div>
+              <div class="row" id="trimRow">
+                <span class="row-ico c-purple" data-icon="timeline"></span>
+                <div class="row-text"><div class="row-title">Cortar trecho</div><div class="row-sub">Baixe só a parte que importa</div></div>
+                <label class="switch"><input type="checkbox" id="trimToggle"><i></i></label>
+              </div>
+              <div class="trim" id="trimBox" hidden>
+                <div class="trim-track" id="trimTrack">
+                  <div class="trim-fill" id="trimFill"></div>
+                  <span class="trim-handle" id="trimA"></span>
+                  <span class="trim-handle" id="trimB"></span>
+                </div>
+                <div class="trim-fields">
+                  <label>Início <input id="trimStart" value="0:00"></label>
+                  <span class="trim-len" id="trimLen"></span>
+                  <label>Fim <input id="trimEnd" value="0:00"></label>
+                </div>
+              </div>
+            </div>
+            <div class="spacer"></div>
+          </div>
+        </div>
+
+        <!-- Barra de ação -->
+        <div class="action-bar" id="actionBar" hidden>
+          <div class="summary">
+            <div class="summary-main" id="summaryMain">—</div>
+            <div class="summary-sub" id="summarySub">—</div>
+          </div>
+          <button class="cta" id="downloadBtn">
+            <span data-icon="arrow-down"></span><span id="ctaLabel">Baixar</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ============================ DOWNLOADS ============================ -->
+      <section class="view" id="view-downloads">
+        <header class="view-head">
+          <div>
+            <h1>Downloads</h1>
+            <p id="dlSubtitle">Nada por aqui ainda</p>
+          </div>
+          <div class="head-actions">
+            <div class="segmented" id="dlFilter">
+              <span class="seg-glider"></span>
+              <button data-filter="all" class="on">Todos</button>
+              <button data-filter="active">Ativos</button>
+              <button data-filter="done">Concluídos</button>
+            </div>
+            <button class="pill-btn ghost" id="clearDone">Limpar</button>
+          </div>
+        </header>
+        <div class="dl-list" id="dlList"></div>
+        <div class="empty" id="dlEmpty">
+          <div class="empty-art"><span data-icon="tray"></span></div>
+          <h3>Nenhum download</h3>
+          <p>Os arquivos que você baixar aparecem aqui, com progresso em tempo real.</p>
+          <button class="pill-btn primary" data-goto="home">Começar a baixar</button>
+        </div>
+      </section>
+
+      <!-- ============================== AJUSTES ============================= -->
+      <section class="view" id="view-settings">
+        <header class="view-head"><div><h1>Ajustes</h1><p>Personalize o Max do seu jeito</p></div></header>
+        <div class="settings">
+          <div class="set-title">Armazenamento</div>
+          <div class="group list">
+            <div class="row">
+              <span class="row-ico c-blue" data-icon="folder"></span>
+              <div class="row-text"><div class="row-title">Pasta de destino</div><div class="row-sub mono" id="setPath">—</div></div>
+              <button class="pill-btn ghost sm" id="changeFolder">Alterar…</button>
+            </div>
+            <div class="folder-tree" id="folderTree">
+              <div class="ft-node root"><span data-icon="folder"></span><b id="ftRoot">Max Downloader</b></div>
+              <button class="ft-node" data-open="video"><span class="ft-line"></span><span data-icon="film"></span>Vídeos<small>abrir</small></button>
+              <button class="ft-node" data-open="audio"><span class="ft-line"></span><span data-icon="music"></span>Áudios<small>abrir</small></button>
+            </div>
+          </div>
+
+          <div class="set-title">Aparência</div>
+          <div class="group list">
+            <div class="row">
+              <span class="row-ico c-indigo" data-icon="moon"></span>
+              <div class="row-text"><div class="row-title">Tema</div></div>
+              <div class="segmented" id="themeSeg">
+                <span class="seg-glider"></span>
+                <button data-theme="auto">Automático</button>
+                <button data-theme="light">Claro</button>
+                <button data-theme="dark">Escuro</button>
+              </div>
+            </div>
+            <div class="row">
+              <span class="row-ico c-pink" data-icon="palette"></span>
+              <div class="row-text"><div class="row-title">Cor de destaque</div></div>
+              <div class="accents" id="accents"></div>
+            </div>
+          </div>
+
+          <div class="set-title">Downloads</div>
+          <div class="group list">
+            <div class="row">
+              <span class="row-ico c-green" data-icon="stack"></span>
+              <div class="row-text"><div class="row-title">Downloads simultâneos</div><div class="row-sub">Quantos arquivos baixar ao mesmo tempo</div></div>
+              <div class="stepper"><button data-step="-1">−</button><b id="concVal">2</b><button data-step="1">+</button></div>
+            </div>
+            <div class="row">
+              <span class="row-ico c-orange" data-icon="doc"></span>
+              <div class="row-text"><div class="row-title">Nome dos arquivos</div></div>
+              <div class="select-wrap">
+                <select id="nameTpl">
+                  <option value="title">Título</option>
+                  <option value="title_uploader">Título - Canal</option>
+                  <option value="uploader_title">Canal - Título</option>
+                  <option value="date_title">Data - Título</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <span class="row-ico c-teal" data-icon="captions"></span>
+              <div class="row-text"><div class="row-title">Idiomas das legendas</div><div class="row-sub">Códigos separados por vírgula (ex.: pt,en,es)</div></div>
+              <input class="text-input" id="subLangs" spellcheck="false">
+            </div>
+            <div class="row">
+              <span class="row-ico c-purple" data-icon="clipboard"></span>
+              <div class="row-text"><div class="row-title">Detectar links copiados</div><div class="row-sub">Sugere o link da área de transferência ao abrir o app</div></div>
+              <label class="switch"><input type="checkbox" id="clipToggle"><i></i></label>
+            </div>
+            <div class="row">
+              <span class="row-ico c-red" data-icon="bell"></span>
+              <div class="row-text"><div class="row-title">Som ao concluir</div></div>
+              <label class="switch"><input type="checkbox" id="soundToggle"><i></i></label>
+            </div>
+          </div>
+
+          <div class="set-title" id="accessSection">Acesso a conteúdo restrito</div>
+          <div class="group list">
+            <div class="row">
+              <span class="row-ico c-indigo" data-icon="key"></span>
+              <div class="row-text">
+                <div class="row-title">Usar meu login do navegador <span class="status-dot" id="authDot"></span></div>
+                <div class="row-sub" id="authSub">Libera vídeos com restrição de idade, de membros e privados que sua conta pode ver</div>
+              </div>
+              <div class="select-wrap">
+                <select id="cookieSrc">
+                  <option value="">Desativado</option>
+                  <option value="firefox">Firefox</option>
+                  <option value="chrome">Chrome</option>
+                  <option value="edge">Edge</option>
+                  <option value="brave">Brave</option>
+                  <option value="opera">Opera</option>
+                  <option value="vivaldi">Vivaldi</option>
+                  <option value="file">Arquivo cookies.txt</option>
+                </select>
+              </div>
+            </div>
+            <div class="row" id="cookieFileRow" hidden>
+              <span class="row-ico c-gray" data-icon="doc"></span>
+              <div class="row-text"><div class="row-title">Arquivo de cookies</div><div class="row-sub mono" id="cookieFilePath">Nenhum arquivo escolhido</div></div>
+              <button class="pill-btn ghost sm" id="cookieFileBtn">Escolher…</button>
+            </div>
+            <div class="row">
+              <span class="row-ico c-teal" data-icon="globe"></span>
+              <div class="row-text"><div class="row-title">Contornar bloqueio regional</div><div class="row-sub">Simula acesso de outro país quando o site permite</div></div>
+              <label class="switch"><input type="checkbox" id="geoToggle"><i></i></label>
+            </div>
+            <div class="row">
+              <span class="row-ico c-blue" data-icon="shield"></span>
+              <div class="row-text"><div class="row-title">Proxy / VPN</div><div class="row-sub">Para conteúdo bloqueado na sua região ou rede</div></div>
+              <input class="text-input wide" id="proxyInput" spellcheck="false" placeholder="socks5://host:porta">
+            </div>
+          </div>
+          <p class="set-note">Os cookies são lidos só no seu computador e enviados apenas ao site do vídeo. Conteúdo com DRM (Netflix, Disney+, Spotify…) não é suportado.</p>
+
+          <div class="set-title">Componentes</div>
+          <div class="group list">
+            <div class="row">
+              <span class="row-ico c-gray" data-icon="cpu"></span>
+              <div class="row-text">
+                <div class="row-title">FFmpeg <span class="status-dot" id="ffDot"></span></div>
+                <div class="row-sub" id="ffSub">Verificando…</div>
+                <div class="mini-progress" id="ffProg" hidden><i></i></div>
+              </div>
+              <button class="pill-btn primary sm" id="ffInstall" hidden>Instalar</button>
+            </div>
+            <div class="row">
+              <span class="row-ico c-gray" data-icon="bolt"></span>
+              <div class="row-text"><div class="row-title">Motor yt-dlp</div><div class="row-sub" id="ytdlpVer">—</div></div>
+            </div>
+          </div>
+
+          <div class="about">
+            <div class="app-icon lg"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M6 19.5h12"/></svg></div>
+            <b>Max Downloader</b>
+            <span id="aboutVer">Versão 1.0</span>
+            <small>Baixe apenas conteúdo que você tem direito de usar.</small>
+            <div class="about-credits">
+              <span>Desenvolvido por <b>Emerson Gonçalves</b></span>
+              <div class="about-links">
+                <button class="pill-btn ghost sm" data-url="https://github.com/emersonsg01"><span data-icon="github"></span>GitHub</button>
+                <button class="pill-btn ghost sm" data-url="https://www.linkedin.com/in/emerson-gon%C3%A7alves-a9ba6582/"><span data-icon="linkedin"></span>LinkedIn</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Dynamic Island -->
+  <div class="island" id="island">
+    <div class="island-compact">
+      <img id="islandThumb" alt="">
+      <span class="island-label" id="islandLabel"></span>
+      <svg class="ring" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" class="ring-bg"/><circle cx="12" cy="12" r="9" class="ring-fg" id="islandRing"/></svg>
+    </div>
+    <div class="island-expanded">
+      <img id="islandThumbBig" alt="">
+      <div class="island-text">
+        <div class="island-title" id="islandTitle"></div>
+        <div class="island-sub" id="islandSub"></div>
+        <div class="island-bar"><i id="islandBar"></i></div>
+      </div>
+      <button class="island-action" id="islandAction"></button>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script src="icons.js"></script>
+  <script src="mock.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
